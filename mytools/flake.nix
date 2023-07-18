@@ -1,5 +1,10 @@
 {
   description = "My Tools";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/23.05";
+  };
+
   outputs = { self, nixpkgs }:
     let 
       pkgs = nixpkgs.legacyPackages.aarch64-darwin; 

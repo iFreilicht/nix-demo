@@ -11,6 +11,9 @@
           inherit (pkgs)
           # Dependencies of demo-magic
           pv
+          # Dependencies of the demo script itself
+          figlet
+          lolcat
           ;
         };
       in 
