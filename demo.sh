@@ -18,7 +18,7 @@ trap exit_hook EXIT
 nix-env --switch-profile "$DEMO_PROFILE"
 
 # Configure demo-magic
-TYPE_SPEED=50
+# TYPE_SPEED=0
 
 # Hide the evidence
 clear
@@ -47,6 +47,7 @@ function next-step {
 
 function intro {
     heading "0. Intro"
+    wait
     cat <<EOF
 
 
