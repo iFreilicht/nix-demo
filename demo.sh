@@ -74,26 +74,29 @@ EOF
 function nix-shell-demo {
     heading "1. nix shell"
 
-    # TODO: use python instead? 
-    p "jq --version"
-    echo "bash: command not found: jq"
-    p "nix shell nixpkgs#jq"
-    nix profile install nixpkgs#jq
-    pei "jq --version"
+    # Let's say you have some version of python installed
+    pe "python3 --version"
+    # But you would like to quickly test a feature of a newer version
+    # How and whether you can do this is different depending on your OS
+    # and package manager, and you're never sure what the side-effects will be.
+    # With nix, you can just try it out:
+    p "nix shell nixpkgs#python312"
+    nix profile install nixpkgs#python312
+    p "python3 --version"
+    nix shell 'nixpkgs#python312' -c python3 --version
     # The name of the command might give it away; we didn't actually install anything
-    # jq is only available in this shell, nowhere else.
+    # This version of python is only available in this shell, nowhere else.
     # We actually created an **isolated** environment.
     # If we close this shell:
     p "exit"
     nix profile remove '.*' --quiet
     # It's gone again!
-    p "jq --version"
-    echo "bash: command not found: jq"
+    pe "python3 --version"
     # This itself is already a useful tool. If you lose interest now and forget everything
-    # else about this talk, at least remember nix shell, it can be very helpful.
+    # else about this talk, at least remember nix shell, it can be a livesaver.
     # You can also make nix shell call a command and exit immediately
     # This can be useful inside shell scripts
-    pe "nix shell nixpkgs#jq -c jq --version"
+    pe "nix shell nixpkgs#python312 -c python3 --version"
 
     p "Ok cool, but what about installing something permanently?"
     next-step
