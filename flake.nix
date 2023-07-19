@@ -14,6 +14,7 @@
           # Dependencies of the demo script itself
           figlet
           lolcat
+          tree
           ;
         };
       in 

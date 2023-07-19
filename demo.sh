@@ -85,7 +85,8 @@ function nix-profile-flake-demo {
     subheading "How is this reproducible?"
 
     pe "cd mytools"
-    pei "bat mytools/flake.lock"
+    pei "tree ."
+    pei "bat -l json flake.lock"
     pe "nix flake metadata"  
 
     next-step
