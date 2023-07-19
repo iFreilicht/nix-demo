@@ -26,12 +26,18 @@ clear
 function heading {
     clear
     echo
+    tput bold
     figlet -c -d ~/repos/figlet-fonts -w $(tput cols) -f "Roman" -k "$1" | lolcat -F 0.03 -S 30 
+    tput sgr0
 }
 
 function subheading {
-    wait
-    figlet -d ~/repos/figlet-fonts -w $(tput cols) -f "maxiwi" -W 'how is this reproducible?' | lolcat -F 0.03 -S 70
+    pe ""
+    echo
+    tput bold
+    figlet -d ~/repos/figlet-fonts -w $(tput cols) -f "small slant" -k "$1" | lolcat -F 0.03 -S 70
+    tput sgr0
+    echo
 }
 
 function next-step {
@@ -39,61 +45,157 @@ function next-step {
     wait
 }
 
+function intro {
+    heading "0. Intro"
+    cat <<EOF
+
+
+
+                    Nix is a software deployment solution that enables deployments that are:
+
+                        * Isolated
+                        * Declarative
+                        * Reproducible
+
+                    The implications of these properties are a game-changer.
+                    
+                    We will take a practical approach and explore what Nix makes possible that
+                    other solutions can't.
+
+
+
+EOF
+    
+    next-step
+}
+
 # Fake a short nix shell session (actually calling nix shell would interrupt the demo)
 function nix-shell-demo {
     heading "1. nix shell"
 
+    # TODO: use python instead? 
     p "jq --version"
     echo "bash: command not found: jq"
     p "nix shell nixpkgs#jq"
     nix profile install nixpkgs#jq
     pei "jq --version"
+    # The name of the command might give it away; we didn't actually install anything
+    # jq is only available in this shell, nowhere else.
+    # We actually created an **isolated** environment.
+    # If we close this shell:
     p "exit"
     nix profile remove '.*' --quiet
+    # It's gone again!
     p "jq --version"
     echo "bash: command not found: jq"
+    # This itself is already a useful tool. If you lose interest now and forget everything
+    # else about this talk, at least remember nix shell, it can be very helpful.
+    # You can also make nix shell call a command and exit immediately
+    # This can be useful inside shell scripts
     pe "nix shell nixpkgs#jq -c jq --version"
 
+    p "Ok cool, but what about installing something permanently?"
     next-step
 }
 
 function nix-profile-demo {
     heading "2. nix profile"
 
-    # Show the same thing, but with nix profile
-    pe "nix profile install nixpkgs#jq "
+    # Installing something works almost the same as in any other package manager
+    pe "nix profile install nixpkgs#jq"
     pei "jq --version"
+    # And we can install multiple packages as well
     pe "nix profile install nixpkgs#fd nixpkgs#asdf-vm nixpkgs#ripgrep nixpkgs#moreutils"
+    # And they will all be available, not just in this shell,
+    # but every shell we launch in the future, too
     pei "fd --version && asdf --version && rg --version && sponge -h"
+    p "Note that we didn't have to use sudo!"
+    # Indeed, no need for sudo. This is possible because we only installed these
+    # packages to our user profile, which is completely isolated from the system profile
+    # TODO: Add additional user and try to execute something as them (probably has to be faked)
     pe "nix profile list"
     pe "nix profile list --profile /nix/var/nix/profiles/default"
-    pe "nix profile remove '.*'"
+    # And not only are profiles isolated each other, each profile is actually isolated from its
+    # previous generations. So let's say you upgrade all your packages 
+    p "nix profile upgrade '.*'"
+    echo "upgrading 'jq' from flake 'github:NixOS/nixpkgs/023b1df882979a413a3f7e2009424db30d51a0fe' to 'github:NixOS/nixpkgs/293a68c901e9ddbca02edff9dd78522887679c31'"
+    # But now one of the tools head a breaking change or is incompatible with something else you installed
+    p "jq --version"
+    echo "Segmentation fault (core dumped)"
+    # How do you recover from this normally? Do you have backups?
+    # Maybe you can grab an old version of the package from an archive?
+    # With nix, the answer is a single command
+    p "nix profile rollback"
+    pei "jq --version"
+    # This is an atomic operation, the old generation was never changed!
+    # nix profile creates a new generation on every operation, so you 
+    # can always roll back to any previous state if something goes wrong!
+    p "This is isolated package management!"
 
+    # Ok, so after all this excitement, let's clean up what we've done so far
+    pe "nix profile remove '.*'"
+    # And...
+    p "Let's start with the real magic!"
     next-step
 }
 
 function nix-profile-flake-demo {
     heading "3. flakes"
 
+    # Previously, we installed packages imperatively, but running multiple install commands
+    # after eachother. This is ok, but when we want to setup our environment on a different
+    # machine, or want to help a colleague get up and running, we would have
+    # to remember all of them.
+    # With nix, we can create a bundle of packages, called a flake, and install that instead.
+    # Let's have a look:
     pe "nix shell nixpkgs#bat -c bat mytools/flake.nix"
+    # explain what's in the flake, roughly
+    # And now we can install this single flake at once, and all tools will be in our profile
     pe "nix profile install ./mytools"
     pei "fd --version && asdf --version && rg --version && sponge -h"
+    # Now, we don't want to install additional tools with `install` anymore, we want to
+    # update our flake instead, so that we can track what we installed. Simple enough:
+    # Add cowsay, that's cute and fun
     pe "vim mytools/flake.nix"
     pe "nix profile upgrade '.*'"
-    cmd # Try out the newly installed tool?
+    cmd # Actually type a cowsay command
 
-    subheading "How is this reproducible?"
-
-    pe "cd mytools"
-    pei "tree ."
-    pei "bat -l json flake.lock"
-    pe "nix flake metadata"  
+    p "This is declarative package management!"
+    # And it's so incredibly useful. We can now put this file into our repository,
+    # and any developer would just have to run `nix profile install` once
+    # to get everything they need.
+    # But wait, we usually don't work in just one repository, and many require
+    # different versions of node, python, so we can't just install them into
+    # the user's profile.
+    # So, let's go one step further: to nix develop
 
     next-step
 }
 
-#nix-shell-demo
-#nix-profile-demo
+function nix-develop-demo {
+    heading "4. nix develop"
+}
+
+function nix-reproducability {
+
+    # The answer is no, and I'll show you why. Let's see what's actually inside mytools:
+    pe "cd mytools"
+    pei "tree ."
+    # There's a lockfile next to my flake! And what does it contain?
+    pe "bat -l json flake.lock"
+    # An exact revision and hash of the nixpkgs package repository! Unless we run `upgrade`,
+    # This file will never be changed, and we will always get the exact same versions.
+    # That's why we have to define nixpkgs as an input! Any package in nixpkgs is a pure function,
+    # meaning that its output depends only on the input, and if the input stays the same,
+    # the output stays the same as well.
+    # This is the concept that underpins the whole Nix ecosystem.
+    pe "nix flake metadata"  
+}
+
+intro
+nix-shell-demo
+nix-profile-demo
 nix-profile-flake-demo
+nix-develop-demo
 
 exit 0
