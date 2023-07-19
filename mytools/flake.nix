@@ -12,14 +12,13 @@
     {
       packages.aarch64-darwin.default = pkgs.buildEnv {
         name = "my-tools";
-        paths = builtins.attrValues {
-          inherit (pkgs)
+        paths = with pkgs; [
           asdf-vm
           fd
+          bat
           moreutils
           ripgrep
-          ;
-        };
+        ];
       };
     };
 }
