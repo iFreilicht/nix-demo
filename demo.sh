@@ -19,6 +19,10 @@ nix-env --switch-profile "$DEMO_PROFILE"
 
 # Configure demo-magic
 # TYPE_SPEED=0
+PROMPT_COLOR="$(tput setab 4)$(tput setaf 15)"
+TRIANGLE_COLOR="$(tput setab 8)$(tput setaf 4)"
+RESET_STYLE="$(tput sgr0)"
+DEMO_PROMPT="$PROMPT_COLOR \w $TRIANGLE_COLOR"" $RESET_STYLE"
 
 # Hide the evidence
 clear
