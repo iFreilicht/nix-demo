@@ -169,13 +169,15 @@ function nix-profile-flake-demo {
     cmd # Actually type a cowsay command
 
     p "This is declarative package management!"
-    # And it's so incredibly useful. We can now put this file into our repository,
-    # and any developer would just have to run `nix profile install` once
-    # to get everything they need.
-    # But wait, we usually don't work in just one repository, and many require
-    # different versions of node, python, so we can't just install them into
-    # the user's profile.
-    # So, let's go one step further: to nix develop
+    # And it's so incredibly useful. We can now put this file into a repository, and any 
+    # developer would just have to run `nix profile install` once to get everything they need.
+    # Even better, the developers don't have to download the files, you can just give them a URL
+    p "nix profile install git+ssh://git@ssh.dev.azure.com/v3/org/project/base-tools"
+    # But wait, we usually don't work in just one repository, and most probably require
+    # different versions of node, python, go, java, etc. so we can't just install them into
+    # the user's profile, they would clash with eachother.
+    # So, let's go one step further: to nix develop, 
+    nix profile remove '.*'
 
     next-step
 }
