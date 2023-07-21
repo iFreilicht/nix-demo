@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "sample-service"
+version = "0.1.0"
+description = "A sample service for nix-demo"
+authors = ["Felix Uhl <felix.uhl@netlight.com>"]
+readme = "README.md"
+packages = [{include = "sample_service"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.6"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+black = "^23.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

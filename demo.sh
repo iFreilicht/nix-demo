@@ -184,6 +184,25 @@ function nix-profile-flake-demo {
 
 function nix-develop-demo {
     heading "4. nix develop"
+    nix profile install nixpkgs#bat
+    # nix develop allows you to set up development enivronment that are isolated from the user profile
+    # as well as from eachother. Let's look at an example service for this.
+    pe "cd sample-service"
+    pei "tree -FCL 1 ."
+    # As you can see, this service is written in node, but has some devDependencies in python for scripts
+    # It also has a flake again, so let's quickly look at that.
+    pe "bat flake.nix"
+    # This now contains a `devShell` output, not a package, you can see a few basic packages and a shellHook
+    # These things work together now when we run
+    pe "nix develop"
+    # As you can see, nix put us in a shell where not only node, yarn, python and poetry are installed, but
+    # also all dependencies defined py package.json and pyproject.toml are available. This is a somewhat minimal setup,
+    # both nix and poetry try to be as reproducible as possible, and so the bash shell we're in right now
+    # has not sourced any of the rc files it normally would. We can back to my custom zsh config by just launching that.
+
+    # We can now launch python and import the click module,
+    # or open ts-node with `yarn exec ts-node`
+
 }
 
 function nix-reproducability {
