@@ -219,9 +219,66 @@ function nix-direnv-demo {
     # except enter the directory of our project. And when we leave, all the changes will be reversed.
     pe "cd .."
     _direnv_hook
-    pei "node --version; yarn --version; python3 --version; poetry --version"
+    pe "node --version; yarn --version; python3 --version; poetry --version"
+    # We've come quite far by now. This is already enough to allow you to use nix to boost producitviy
+    # and onboarding speeds and reduce confusion and undocumented behavior
 
     next-step
+}
+
+function nix-build-demo {
+    heading "5. nix build"
+    nix profile install nixpkgs#bat nixpkgs#direnv nixpkgs#docker
+    eval "$(direnv hook bash)"
+    # Now we will look at an actual project, an actual react app that we want to build and deploy
+    pe "cd sample-app"
+    rm -f result
+    rm -rf build
+    _direnv_hook
+    # Note how we're already in our development environment thanks to direnv.
+    pe "tree -FC -I node_modules ."
+    # Another flake, let's have a look!
+    pe "bat --line-range :20 --line-range 52: flake.nix"
+    # I've cut out some stuff we'll get to later. For now, let's look at how our devShell is defined.
+    # It's much simpler now, but you'll notice that we didn't have to specify the architecture anymore
+    # At the top, there's a new input; `flake-utils`. It provides a function `eachDefaultSystem`
+    # that replicates my outputs for ARM and x64 linux and macOS. Windows is supported via WSL.
+    pe "yarn build"
+    # We're already in the dev environment, so this will work perfectly fine
+    pe "tree -FC build"
+    # And indeed, we get everything and can serve this with the recommended `serve` utility
+    pe "yarn exec serve -s build"
+    # Ok, so far so boring. But we can integrate this with nix build to make use of input-addressed caching:
+    pe "bat --line-range :14 --line-range 20:35 --line-range 51: flake.nix"
+    # So in addition to our devShell, we specify a package as well, called "app" it basically runs the build
+    # offline in a pure environment, meaning it has no access to any system libraries or the internet, only the
+    # inputs we provide, which in this case, is the current directory. The installPhase then moves the `build`
+    # directory to a unique path. Let's see it in action
+    pe "nix build .#app"
+    # Build the output app of the flake in the current directory
+    # This will create a symlink "result" that contains our app
+    pe "tree -FC result"
+    # Because nix knows exactly what the inputs are, it can safely deduce that the build output didn't change
+    # as long as the input didn't change. So running the build again takes less than a second
+    pe "nix build .#app"
+    # TODO: explain mechanics of why here?
+
+    # but we probably want to deploy this somewhere, so I also prepared a dockerImage output that puts our app
+    # in a docker image and serves it with lighttpd
+    pe "bat --line-range 1 --line-range 9:14 --line-range 21:22 --line-range 34: flake.nix"
+    # Note that I don't specify any dependencies explicitly here. Just the fact that I'm referring to
+    # the `lighttpd.confg` file, the `lighttpd` package and the `app` package is enough for them to be included.
+    # If the app package wasn't built yet, it will be built recursively, until all dependencies are present. 
+    pe "nix build .#dockerImage"
+    # One dependency that isn't required for this build is docker itself, the layers are built by Nix itself.
+    # The output is linked at result again, but now it's a OCI container archive we can load and serve with docker
+    pe "docker load < result"
+    pei "docker run --rm -p 8080:8080 sample-app"
+    # Also note that I included lighttpd from x86_linux, a different architecture and OS above.
+    # I can just do that with Nix, it doesn't care, and it means that my container image runs everywhere.
+    # The implications of this are huge. CI pipelines can share artifacts deeply, meaning you only have to run
+    # a build once. 
+    # TODO: maybe continue? Not sure, it feels like the mechanics are underexplained right now.
 }
 
 function nix-reproducability {
@@ -246,5 +303,6 @@ nix-profile-demo
 nix-profile-flake-demo
 nix-develop-demo
 nix-direnv-demo
+nix-build-demo
 
 exit 0
