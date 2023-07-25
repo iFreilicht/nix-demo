@@ -191,6 +191,35 @@ function nix-develop-demo {
     # This is a good point to stop again and take a breath. You can imagine adding more tools here,
     # and this might already be enough functionality for you. A convenient and reproducible way to set
     # up user profiles and development environments. That's pretty useful.
+    cd ..
+}
+
+function nix-direnv-demo {
+    cd sample-service
+    # The UX of develop is a little inconvenient, so let's have a small detour before we continue. If you're
+    # starting to lose interest now, keep going for just one more minute, it'll be worth it!
+    pe "nix profile install nixpkgs#direnv"
+    p 'eval "$(direnv hook $SHELL)"'
+    eval "$(direnv hook bash)"
+    # TODO: Add direnv and the shell hook sourcing to the tools file and install with nix profile upgrade '.*'
+    # We'll use a tool called direnv to completely automate entering and exiting the development environment.
+    p "echo 'use flake' > .envrc"
+    direnv revoke # Ensure we start with restricted mode
+    _direnv_hook # Run hook manually, $PROMPT_COMMAND is inactive during demo-magic 
+    # With it installed and the .envrc file containting "use flake", direnv will know to enter the development shell
+    # whenever we enter this directory. Because this could run arbitrary code, we have to allow this first.
+    pe "direnv allow"
+    _direnv_hook
+    # You can see that direnv ran the shellHook from our flake and modified many of our
+    # environment variables. We're not in a subshell now as we were with nix develop, so
+    # I didn't even have to manually specify that I wanted to launch zsh.
+
+    pe "node --version; yarn --version; python3 --version; poetry --version"
+    # Now, we have pretty much the same environment as before, except that we din't have to do anything for it
+    # except enter the directory of our project. And when we leave, all the changes will be reversed.
+    pe "cd .."
+    _direnv_hook
+    pei "node --version; yarn --version; python3 --version; poetry --version"
 
     next-step
 }
@@ -216,5 +245,6 @@ nix-shell-demo
 nix-profile-demo
 nix-profile-flake-demo
 nix-develop-demo
+nix-direnv-demo
 
 exit 0
