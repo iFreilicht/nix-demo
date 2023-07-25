@@ -11,7 +11,7 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = with pkgs; [ # _
           nodejs_20
-          (yarn.override { nodejs = nodejs_20; })
+          yarn
           python3
           poetry
         ];

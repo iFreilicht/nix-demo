@@ -17,6 +17,7 @@ nix-env --switch-profile "$DEMO_PROFILE"
 
 # Reset files we edit during the demo to their starting state
 git restore mytools/flake.nix
+git restore sample-service/flake.nix
 
 # Configure demo-magic
 # TYPE_SPEED=0
