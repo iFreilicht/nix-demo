@@ -63,15 +63,13 @@ function nix-shell-demo {
     # and package manager, and you're never sure what the side-effects will be.
     # With nix, you can just try it out:
     p "nix shell nixpkgs#python312"
-    nix profile install nixpkgs#python312
     p "python3 --version"
-    nix shell 'nixpkgs#python312' -c python3 --version
+    nix run 'nixpkgs#python312' -- --version
     # The name of the command might give it away; we didn't actually install anything
     # This version of python is only available in this shell, nowhere else.
     # We actually created an **isolated** environment.
     # If we close this shell:
     p "exit"
-    nix profile remove '.*' --quiet
     # It's gone again!
     pe "python3 --version"
     # This itself is already a useful tool. If you lose interest now and forget everything
@@ -79,6 +77,8 @@ function nix-shell-demo {
     # You can also make nix shell call a command and exit immediately
     # This can be useful inside shell scripts
     pe "nix shell nixpkgs#python312 -c python3 --version"
+    # Or, even shorter, use nix run
+    pe "nix run nixpkgs#python312 -- --version"
 
     p "Ok cool, but what about installing something permanently?"
     next-step
@@ -134,7 +134,7 @@ function nix-profile-flake-demo {
     # to remember all of them.
     # With nix, we can create a bundle of packages, called a flake, and install that instead.
     # Let's have a look:
-    pe "nix shell nixpkgs#bat -c bat mytools/flake.nix"
+    pe "nix run nixpkgs#bat -- mytools/flake.nix"
     # explain what's in the flake, roughly
     # And now we can install this single flake at once, and all tools will be in our profile
     pe "nix profile install ./mytools"
