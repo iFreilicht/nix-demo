@@ -142,9 +142,11 @@ function nix-profile-flake-demo {
     # Now, we don't want to install additional tools with `install` anymore, we want to
     # update our flake instead, so that we can track what we installed. Simple enough:
     # Add cowsay, that's cute and fun
-    pe "vim mytools/flake.nix"
+    p "vim mytools/flake.nix"
+    vim mytools/flake.nix -s <(./vim/animate-edit.sh ./vim/add-cowsay.vim)
+    # Remember to type :wq to exit
     pe "nix profile upgrade '.*'"
-    cmd # Actually type a cowsay command
+    pe "cowsay 'Nix is revoluationary!'"
 
     p "This is declarative package management!"
     # And it's so incredibly useful. We can now put this file into a repository, and any 

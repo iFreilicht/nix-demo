@@ -15,6 +15,9 @@ trap exit_hook EXIT
 # Switch to demo profile only after ensuring the user profile will be restored
 nix-env --switch-profile "$DEMO_PROFILE"
 
+# Reset files we edit during the demo to their starting state
+git restore mytools/flake.nix
+
 # Configure demo-magic
 # TYPE_SPEED=0
 PROMPT_COLOR="$(tput setab 4)$(tput setaf 15)"
