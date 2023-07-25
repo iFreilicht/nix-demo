@@ -11,14 +11,15 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = with pkgs; [ # _
           nodejs_20
-          yarn
+          (yarn.override { nodejs = nodejs_20; })
           python3
           poetry
         ];
         shellHook = ''
           yarn install
-          poetry shell
-          exit
+          poetry env use python3
+          . .venv/bin/activate
+          poetry install
         '';
       };
     };
