@@ -1,1 +1,1 @@
-nix shell -c "./demo.sh" "$@"
+START_SH=1 nix shell .#nix-demo-env -c "./demo.sh" "$@"

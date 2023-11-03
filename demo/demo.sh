@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "${START_SH}" ]; then
+    echo "Don't execute demo.sh directly! Run ./start.sh instead!"
+    exit 1
+fi
+
 . demo-setup.sh
 
 # Hide the evidence
