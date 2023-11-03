@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Title</title>
+
+  <link rel="stylesheet" href="/node_modules/reveal.js/dist/reveal.css">
+  <link rel="stylesheet" href="/node_modules/reveal.js/dist/theme/night.css">
+  <link rel="stylesheet" href="/node_modules/highlight.js/styles/stackoverflow-dark.css">
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section data-markdown> <textarea data-template>
+          ## Nix
+          ### Your superpower package manager
+      </textarea></section>
+      <section data-markdown><textarea data-template>
+          Nix is a software deployment solution that enables deployments that are:
+
+          * Isolated
+          * Declarative
+          * Reproducible
+
+          The implications of these properties are a game-changer.
+
+          We will take a practical approach and explore what Nix makes possible that
+          other solutions can't.
+      </textarea></section>
+      <section>
+        <h2 class="r-fit-text"><code>nix shell</code><br>and <code>nix run</code></h2>
+        <h3>Epemeral installations</h3>
+      </section>
+      <section data-markdown><textarea data-template>
+          ```console [1-2|3-5|6-8|9-10|11-12]
+          ~ $ python3 --version
+          Python 3.9.6
+          ~ $ nix shell nixpkgs#python312
+          ~ $ python3 --version
+          Python 3.12.0b3
+          ~ $ exit
+          ~ $ python3 --version
+          Python 3.9.6
+          ~ $ nix shell nixpkgs#python312 -c python3 --version
+          Python 3.12.0b3
+          ~ $ nix run nixpkgs#python312 -- --version
+          Python 3.12.0b3
+          ```
+      </textarea> </section>
+      <section>
+        <section>
+          <h2 class="r-fit-text"><code>nix profile</code></h2>
+          <h3>Permanent installations per user</h3>
+        </section>
+        <section data-markdown><textarea data-template>
+          ```console [1-3|4-10]
+          ~ $ nix profile install nixpkgs#jq
+          ~ $ jq --version
+          jq-1.6
+          ~ $ nix profile install nixpkgs#fd nixpkgs#asdf-vm nixpkgs#ripgrep nixpkgs#moreutils
+          ~ $ fd --version && asdf --version && rg --version && sponge -h
+          fd 8.5.0
+          v0.12.0
+          ripgrep 13.0.0
+          -SIMD -AVX (compiled)
+          sponge [-a] <file>: soak up all input from stdin and write it to <file>
+          ```
+
+          <p class="fragment">
+            Note that we didn't have to use sudo!
+          </p>
+        </textarea></section>
+        <section data-markdown><textarea data-template>
+### Listing the contents of our profile
+
+```console [1|2-6|8-12|14-18|20-24|26-30]
+~ $ nix profile list
+Index:              0
+Flake attribute:    legacyPackages.aarch64-darwin.jq
+Original flake URL: flake:nixpkgs
+Locked flake URL:   github:NixOS/nixpkgs/2d82894fa1e2d23a22f40275a78bfbb09b92ffde
+Store paths:        /nix/store/0c3kg5iag19pi8llpbn2d2waks8in18k-jq-1.6-man /nix/store/px3fyd2dzzh204y4dk94hy1hsvyl6zpz-jq-1.6-bin
+
+Index:              1
+Flake attribute:    legacyPackages.aarch64-darwin.fd
+Original flake URL: flake:nixpkgs
+Locked flake URL:   github:NixOS/nixpkgs/2d82894fa1e2d23a22f40275a78bfbb09b92ffde
+Store paths:        /nix/store/rfwf93ah5yr3a48svg1jy1dhj6na0p1w-fd-8.7.0
+
+Index:              2
+Flake attribute:    legacyPackages.aarch64-darwin.asdf-vm
+Original flake URL: flake:nixpkgs
+Locked flake URL:   github:NixOS/nixpkgs/2d82894fa1e2d23a22f40275a78bfbb09b92ffde
+Store paths:        /nix/store/60g02my7na0i733dza7gfzbbm9qr0qys-asdf-vm-0.12.0
+
+Index:              3
+Flake attribute:    legacyPackages.aarch64-darwin.ripgrep
+Original flake URL: flake:nixpkgs
+Locked flake URL:   github:NixOS/nixpkgs/2d82894fa1e2d23a22f40275a78bfbb09b92ffde
+Store paths:        /nix/store/jyr7rqb1hy11aingdi9myb7ik1ai0559-ripgrep-13.0.0
+
+Index:              4
+Flake attribute:    legacyPackages.aarch64-darwin.moreutils
+Original flake URL: flake:nixpkgs
+Locked flake URL:   github:NixOS/nixpkgs/2d82894fa1e2d23a22f40275a78bfbb09b92ffde
+Store paths:        /nix/store/l3zn2976fpkpsyjqbf3b86s48cbr2p73-moreutils-0.67
+```
+        </textarea></section>
+        <section data-markdown><textarea data-template>
+### The default profile
+This contains software installed for all users
+
+```console
+~ $ nix profile list --profile /nix/var/nix/profiles/default
+Index:              0
+Store paths:        /nix/store/jl9qma14fb4zk9lq1k0syw2k9qm2gqjw-nix-2.17.0
+
+Index:              1
+Store paths:        /nix/store/l6475m8070amp2lkxz8s36sxwykkqbn4-nss-cacert-3.66
+```
+        </textarea></section>
+        <section data-markdown><textarea data-template>
+          ## Atomic upgrades and rollbacks
+
+          ```console [1-3|4-5|6|7-8|9-11]
+          ~ $ nix profile upgrade '.*'
+          upgrading 'jq' from flake 'github:NixOS/nixpkgs/023b1df882979a413a3f7e2009424db30d51a0fe' to 'github:NixOS/nixpkgs/293a68c901e9ddbca02edff9dd78522887679c31'
+          upgrading 'fd' from flake 'github:NixOS/nixpkgs/023b1df882979a413a3f7e2009424db30d51a0fe' to 'github:NixOS/nixpkgs/293a68c901e9ddbca02edff9dd78522887679c31'
+          ~ $ jq --version
+          Segmentation fault (core dumped)
+          ~ $ nix profile rollback
+          ~ $ jq --version
+          jq-1.6
+          ~ $ nix profile upgrade fd
+          ~ $ fd --version
+          fd 8.7.0
+          ```
+
+          <p class="fragment">
+            Every package can be upgraded completely independently from all others.
+          </p>
+          <p class="fragment">
+            This is isolated package management!
+          </p>
+        </textarea></section>
+      </section>
+      <section>
+          <h2 class="r-fit-text">Flakes</h2>
+          <h3>Declarative user profiles and more!</h3>
+      </section>
+      <section data-markdown><textarea data-template>
+```console
+~/mytools $ vim flake.nix
+```
+```nix [1,22|2|4]
+{
+  description = "My Tools";
+
+  inputs = { nixpkgs.url = "github:NixOS/nixpkgs/23.05"; };
+
+  outputs = { self, nixpkgs }:
+    let
+      pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+    in
+    {
+      packages.aarch64-darwin.default = pkgs.buildEnv {
+        name = "my-tools";
+        paths = with pkgs; [
+          asdf-vm
+          fd
+          bat
+          moreutils
+          ripgrep
+        ];
+      };
+    };
+}
+```
+      </textarea></section>
+      <section data-markdown><textarea data-template>
+```console
+~/mytools $ vim flake.nix
+```
+```nix [4|6|13-19]
+{
+  description = "My Tools";
+
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/23.05"; };
+
+  outputs = { self, nixpkgs }:
+    let
+      pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+    in
+    {
+      packages.aarch64-darwin.default = pkgs.buildEnv {
+        name = "my-tools";
+        paths = with pkgs; [
+          asdf-vm
+          fd
+          bat
+          moreutils
+          ripgrep
+        ];
+      };
+    };
+}
+```
+      </textarea></section>
+      <section data-markdown><textarea data-template>
+        ```console
+        ~/mytools $ nix profile install .
+        ~/mytools $ fd --version && asdf --version && rg --version && sponge -h
+        fd 8.7.0
+        v0.11.3
+        ripgrep 13.0.0
+        -SIMD -AVX (compiled)
+        sponge [-a] <file>: soak up all input from stdin and write it to <file>
+        ```
+      </textarea></section>
+      <section data-markdown><textarea data-template>
+```console
+~/mytools $ vim flake.nix
+```
+```nix [1|17]
+{
+  description = "My Tools";
+
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/23.05"; };
+
+  outputs = { self, nixpkgs }:
+    let
+      pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+    in
+    {
+      packages.aarch64-darwin.default = pkgs.buildEnv {
+        name = "my-tools";
+        paths = with pkgs; [
+          asdf-vm
+          fd
+          bat
+          cowsay
+          moreutils
+          ripgrep
+        ];
+      };
+    };
+}
+```
+      </textarea></section>
+      <section data-markdown><textarea data-template>
+```console [1|2-10]
+~/mytools $ nix profile upgrade '.*'
+~/mytools $ cowsay 'Nix is revoluationary!'
+ ________________________
+< Nix is revoluationary! >
+ ------------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
+      </textarea></section>
+    </div>
+  </div>
+  <script type="module" src="/js/index.js"></script>
+</body>
+
+</html>

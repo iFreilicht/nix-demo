@@ -1,13 +1,20 @@
 {
-  description = "Demo of Nix.";
+  description = "Tauri Javascript App";
 
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs = {
+    utils.url = "github:numtide/flake-utils";
+  };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs = { self, nixpkgs, utils, }:
+    utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system};
-      in {
-        packages.default = pkgs.buildEnv {
+    in {
+      devShell = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          yarn
+        ];
+      };
+      packages.default = pkgs.buildEnv {
           name = "nix-demo-env";
           paths = with pkgs; [ # _
             # Dependencies of demo-magic
@@ -18,5 +25,5 @@
             tree
           ];
         };
-      });
+    });
 }

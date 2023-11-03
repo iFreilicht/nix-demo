@@ -1,0 +1,21 @@
+{
+  "name": "nix-template-slides",
+  "version": "1.0.0",
+  "main": "src/index.html",
+  "repository": "git@github.com:MordragT/nix-template-slides",
+  "author": "Thomas Wehmöller <connect.mordrag@gmx.de>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/reveal.js": "^4.4.5",
+    "highlight.js": "^11.9.0",
+    "reveal.js": "^4.3.1"
+  },
+  "devDependencies": {
+    "vite": "^3.0.0"
+  }
+}
