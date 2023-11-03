@@ -8,5 +8,6 @@ You need to have nix installed and the experimental features `flakes` and `nix-c
 To start the demo, run this command:
 
 ```
+cd demo
 ./start.sh
 ```
