@@ -234,6 +234,8 @@ function nix-build-demo {
     pe "cd sample-app"
     rm -f result
     rm -rf build
+    # Ensure the environment is loaded properly
+    direnv allow
     _direnv_hook
     # Note how we're already in our development environment thanks to direnv.
     pe "tree -FC -I node_modules ."
