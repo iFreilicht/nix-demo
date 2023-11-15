@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "mdx-deck deck.mdx"
+  },
+  "dependencies": {
+    "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "mdx-deck": "^4.1.1"
+  }
+}
