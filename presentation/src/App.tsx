@@ -1,3 +1,4 @@
+import Terminal from "./components/Terminal";
 import { defaultTheme } from "./theme/default-theme";
 import {
   CodePane,
@@ -38,6 +39,9 @@ function App() {
             We will take a practical approach and explore what Nix makes possible that other solutions can't.
             `}
         </MarkdownSlideSet>
+        <Slide>
+          <Terminal />
+        </Slide>
         <Slide>
           <Markdown>
             {`

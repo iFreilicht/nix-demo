@@ -67,3 +67,8 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+div.xterm-helpers {
+  height: 0;
+  opacity: 0;
+}
