@@ -1,0 +1,636 @@
+# Nix for all: The package manager's final form.
+
+---
+
+Nix is a
+
+* package manager
+* environment manager
+* build tool
+* (and can be more, but we'll cover those three)
+
+and its approach to package management is
+
+* Isolated
+* Declarative
+* Reproducible
+
+The implications of these properties are a game-changer. We will
+take a practical approach and explore what Nix makes possible that
+other solutions can't.
+
+---
+
+## 1. `nix shell`
+
+Let's say you have some version of python installed
+
+```command
+python3 --version
+```
+
+But you would like to quickly test a feature of a newer version
+How and whether you can do this is different depending on your OS
+and package manager, and you're never sure what the side-effects will be.
+With nix, you can just try it out:
+
+```command
+nix shell nixpkgs#python312
+python3 --version
+```
+
+The name of the command might give it away; we didn't actually install anything
+This version of python is only available in this shell, nowhere else.
+We actually created an **isolated** environment.
+If we close this shell:
+
+```command
+exit
+```
+
+It's gone again!
+
+
+```command
+python3 --version
+```
+
+If you just want to run a command once, for example to test if your script also works
+with an older version of python, you can do it with `nix run`:
+
+```command
+nix run nixpkgs#python38 -- hello.py
+```
+
+These are already useful tools to have in your belt. If you lose interest now and forget everything
+else about this talk, at least remember `nix shell` and `nix run`, they can be a livesaver.
+
+---
+
+But actually, don't lose interest, because just these two tools are so much more powerful than you
+might initially assume. I'm sure you noticed the odd `nixpkgs#package` syntax, right?
+No other package manager requires you to type out the name of the package repository your accessing,
+so why would Nix? Well, this is actually a URL, `nixpkgs` is just a shortcut to the official package
+repository.
+
+```command
+nix run https://github.com/NixOS/nixpkgs/archive/refs/heads/master.zip#python38
+nix run github:NixOS/nixpkgs#python38
+nix run nixpkgs#python38
+```
+
+You can use any URL to a tarball or zip archive (as long as they contain the files nix expects),
+no matter if it's via https, ssh or a local disk, and just install directly from that.
+For common cases we have special protocol names like `github:`, and so you can run software
+without installing it like this:
+
+So, if you created a piece of software and want people to use it, you don't need to get it packaged
+in a distro, you don't need to document build instructions, create releases or anything like that.
+
+```command
+nix run github:eza-community/eza
+```
+
+There's another detail you should learn before we move on. You can enter a shell with multiple
+packages at once:
+
+```command
+nix shell nixpkgs#jq nixpkgs#pandoc nixpkgs#pipenv
+```
+
+But typing `nixpkgs` every time is annoying. You can instead type:
+
+```command
+nix shell nixpkgs#{jq,pandoc,pipenv}
+```
+
+This is not a Nix feature, but a feature from bash (or zsh) called brace-expansion.
+
+Ok cool, but this seems somewhat limiting, how can I install packages permanently?
+
+---
+
+## 2. `nix profile`
+
+Installing something works almost the same as in any other package manager
+
+```command
+nix profile install nixpkgs#jq
+jq --version
+```
+
+And we can install multiple packages as well with the trick I've shown you before
+
+```command
+nix profile install nixpkgs#{fd,asdf-vm,ripgrep,moreutils}
+```
+
+And they will all be available, not just in this shell,
+but every shell we launch in the future, too
+
+```command
+fd --version && asdf --version && rg --version && sponge -h
+```
+
+Note that we didn't have to use sudo!
+
+---
+
+This is possible because we only installed these
+packages to our user profile, which is completely isolated from the system profile
+TODO: Add additional user and try to execute something as them (probably has to be faked)
+
+```command
+nix profile list
+nix profile list --profile /nix/var/nix/profiles/default
+```
+
+And not only are profiles isolated each other, each profile is actually isolated from its
+previous generations. So let's say you upgrade all your packages
+
+```command
+nix profile upgrade '.*'
+echo "upgrading 'jq' from flake 'github:NixOS/nixpkgs/023b1df882979a413a3f7e2009424db30d51a0fe' to 'github:NixOS/nixpkgs/293a68c901e9ddbca02edff9dd78522887679c31'"
+```
+But now one of the tools had a breaking change or is incompatible with something else you installed
+
+```command
+jq --version
+echo "Segmentation fault (core dumped)"
+```
+
+How do you recover from this normally? Do you have backups?
+Maybe you can grab an old version of the package from an archive?
+With nix, the answer is a single command:
+
+```command
+nix profile rollback
+jq --version
+```
+
+This is an atomic operation, the old generation was never changed!
+nix profile creates a new generation on every operation, so you
+can always roll back to any previous state if something goes wrong!
+This is isolated package management!
+
+Ok, so after all this excitement, let's clean up what we've done so far
+
+```command
+nix profile remove '.*'
+```
+
+And... Let's start with the real magic!
+
+---
+
+## 3. Nix flakes
+
+Previously, we installed packages imperatively, but running multiple install commands
+after eachother. This is ok, but when we want to setup our environment on a different
+machine, or want to help a colleague get up and running, we would have
+to remember all of them.
+With Nix, we can create a meta-package, and install that instead.
+Let's have a look:
+
+```command
+nix run nixpkgs#bat -- mytools/flake.nix
+```
+
+This is a flake. It is written in the Nix language, which is a mostly pure, lazily-evaluated, functional
+language. What that means we'll see later, but for now, let's go over the basic constructs.
+
+```nix
+{
+    a = "asdf";
+    b = 2;
+    c = false;
+}
+```
+This is an attribute set with a string, a number and a boolean. They're very similar to hashmaps or dicts.
+You can see a flake is a big attribute set with the attributes description, inputs and outputs.
+The inputs attr set also shows off nested keys.
+The only other datastructure in Nix is a list.
+```nix
+[ 1 "nope" true ]
+```
+Note that elements are sparated by spaces, not commas. You can see a list in the `paths` attribute.
+
+Next are functions. They either take a single argument or an attribute set and destructure it.
+```nix
+a: b: a+b
+{ a, b }: a+b
+```
+You can see that `outputs` is a function that takes an attribute set containing "self" and "nixpkgs".
+
+Functions are called simply without parentheses.
+```nix
+builtins.toString 5
+```
+You can see that `pkgs.buildEnv` is being called with an attribute set.
+
+Finally, for this example, we have the `let ... in` and `with` constructs. Because Nix is functional,
+there are no statements, only expressions. With `let`, you can define a set of names that will be
+available in the expression following `in`. See how `pkgs` is "assigned" and then reused in two
+places. `let ... in` is the main mechanism for doing deduplication like that.
+`with` is just a nicety that makes all attributes from an attrset available in the expression following
+it. Without it, we would have to type `pkgs.` in front of every package in that list.
+
+So now, we know enough to see that this file defines a set of inputs, and a function that takes
+those inputs and outputs a set of attributes describing the outputs.
+There's only one input, `nixpkgs`, and one output: `packages.aarch64-darwin.default`, and it
+contains the paths of all the packages listed here.
+This does mean this flake will only install on Apple Silicon Macs, but we'll see
+later how we can build cross-platform packages.
+
+We can take a look at those outputs:
+
+```command
+nix flake show ./mytools
+```
+
+Now we can install this single flake at once, and all the tools will be in our profile:
+
+```command
+nix profile install ./mytools
+fd --version && asdf --version && rg --version && sponge -h
+```
+
+Notice that it looks like we've passed a path, but that isn't quite true. This is still a URL and
+its canonical version would be: `git+file:./mytools#default` but when a URL starts with `.`, the
+`git` and `file` can be omitted, and if we install the `#default` output, that can be omitted as well.
+
+Now, we don't want to install additional tools with `install` anymore, we want to
+update our flake instead, so that we can track what we installed. Simple enough:
+(Add cowsay, that's cute and fun)
+
+```command
+vim mytools/flake.nix
+vim mytools/flake.nix -s <(./vim/animate-edit.sh ./vim/add-cowsay.vim)
+```
+
+Remember to type :wq to exit
+
+```command
+nix profile upgrade '.*'
+cowsay 'Nix is revoluationary!'
+```
+
+This is **declarative** package management!
+And it's so incredibly useful. Nix actually created a flake.lock file when we installed the
+packages, and we can now put these two files into a repository, and any
+developer would just have to run `nix profile install` once to get every tool they need in the
+exact version that you've specified.
+
+We know this mechanism from any good language-specific package manager already; npm, cargo, poetry
+all use it, but Nix is language-agnostic, so you can install literally anything with it, and
+because of the lockfile, this is a **reproducible** installation. Every time you run it, you'll
+get the exact same result!
+
+And as we've learned, you don't even need to clone a repository to install from it. If you're onboarding
+developers that joined your company and you have a set of tools that everyone needs, you can just give them a
+single command:
+
+```command
+nix profile install git+ssh://git@ssh.dev.azure.com/v3/org/project/base-tools
+```
+
+And they'll be up-and-running.
+
+Of course, we usually don't work in just one repository, and most probably require
+different versions of node, python, go, java, etc. so we can't just install them into
+the user's profile, they would clash with eachother.
+So, let's go one step further: to `nix develop`
+
+```command
+nix profile remove '.*'
+```
+
+---
+
+## 4. nix develop
+
+```command
+nix profile install nixpkgs#{bat,jq}
+```
+
+`nix develop` allows you to set up development enivronments that are isolated from the user profile
+as well as from eachother. Let's look at an example service for this.
+
+```command
+cd sample-service
+tree -FCL 1 .
+```
+As you can see, this service is written in node, but has some devDependencies in python for scripts
+It also has a flake again, so let's quickly look at that.
+
+```command
+bat flake.nix
+```
+
+This now contains a `devShell` output, not a package, you can see a few basic packages like before,
+but there is no a shellHook as well. These things work together now when we run
+
+```command
+nix develop
+node --version; yarn --version; python3 --version; poetry --version
+python3 -c 'import click; print(click.__version__)'
+node -e 'console.log(require("'"'"express"'"'").text)'
+```
+
+As you can see, nix put us in a shell where not only node, yarn, python and poetry are installed, but
+also all dependencies defined by `package.json` and `pyproject.toml` are available. This was a somewhat crude setup,
+both nix and poetry try to be as reproducible as possible, and so the bash shell that we were in didn't
+source any of the rc files it normally would. We can back to my custom zsh config by just launching that.
+
+```command
+zsh
+```
+
+Ah, much nicer. Now it is possible to define all of your dependencies in Nix so you don't need a
+`package.json` or `pyproject.toml`. However, I would advise against this when you're starting out.
+While the maintainers of nixpkgs re-package a lot of libraries from the main language specific package
+repos, they are missing a significant number, just like any Linux distribution. And while it is
+possible to package missing dependencies yourself and a great way to learn Nix, it will likely
+slow you down and be a frustrating experience if your actual goal is something else.
+Let's get back to the demo.
+
+```command
+jq --version && bat --version
+```
+
+As you can see, only the added tools override our user profile. The tools we installed before are still available!
+There's a bit of a trap, though:
+
+```command
+yarn versions
+```
+
+Yarn uses the wrong nodejs version! Nix is so good at isolating, all the packages are isolated from each other!
+In this case, yarn depends on nodejs, and what we install into our dev environment can't change that in any way.
+We have to modify the yarn package itself, and override the input nodejs. Luckily, Nix makes this quite easy.
+
+```command
+vim flake.nix
+vim flake.nix -s <(../vim/animate-edit.sh ../vim/override-node.vim)
+nix develop
+yarn versions
+```
+
+So now we get the expected result. We'll see later why and how this actually works.
+This isolation runs deep, you can even have multiple versions of dynamically linked libraries with the same name!
+Nix knows which one belongs to which package and ensures that they can never interfere.
+Talking about interference, let's exit this shell again.
+
+```command
+node --version; yarn --version; python3 --version; poetry --version
+```
+
+Now we're back in our clean user environment, no trace of anything from the development shell.
+This is a good point to stop again and take a breath. You can imagine adding more tools here,
+and this might already be enough functionality for you. A convenient and reproducible way to set
+up user profiles and development environments. That's pretty useful.
+
+---
+
+Insert direnv demo if there is time.
+
+---
+
+## 5. `nix build`
+
+Ok, so we've gone through the package management aspect, the development environments, let's now
+look at the final aspect of Nix for this talk, the build tool.
+
+```command
+nix profile install nixpkgs#{bat,direnv,docker}
+eval "$(direnv hook bash)"
+```
+
+Let's look at an actual project, an actual react app that we want to build and deploy
+
+```command
+cd sample-app
+rm -f result
+rm -rf build
+# Ensure the environment is loaded properly
+direnv allow
+_direnv_hook
+```
+
+Note how we're already in our development environment thanks to direnv. Let's look at the folder
+structure of this project.
+
+```command
+tree -FC -I node_modules .
+```
+
+Another flake, let's have a look!
+
+```command
+bat --line-range :20 --line-range 52: flake.nix
+```
+
+I've cut out some stuff we'll get to later. For now, let's look at how our devShell is defined.
+It's much simpler now, but you'll notice that we didn't have to specify the architecture anymore
+At the top, there's a new input; `flake-utils`. It provides a function `eachDefaultSystem`
+that replicates my outputs for Linux and macOS on ARM and x86. Windows is supported via WSL.
+
+We can just build this with yarn and serve it.
+
+```command
+yarn build
+tree -FC build
+yarn exec serve -s build
+```
+
+Ok, so far so boring. But we can integrate this with nix build to make use of input-addressed caching:
+
+```command
+bat --line-range :14 --line-range 20:35 --line-range 51: flake.nix
+```
+
+So in addition to our `devShell`, we also specify a `package`  called "app".
+
+This runs the build offline in a pure environment in a temporary directory, meaning the build has
+no access to any system libraries, the users home directory or the internet. Only the inputs we
+provide, which in this case, is the current directory, can influence the build output.
+The installPhase then moves the `build` directory to a unique path. Let's see it in action
+
+```command
+"nix build .#app"
+```
+This will create a symlink "result" that contains our app
+
+```command
+tree -FC result
+```
+
+Because nix knows exactly what the inputs are, it can safely deduce that the build output didn't change
+as long as the input didn't change. A build becomes a pure function.
+So running the build again takes less than a second
+
+```command
+"nix build .#app"
+```
+
+TODO: explain mechanics of why here?
+
+---
+
+TODO: include the docker demo or not?
+
+but we probably want to deploy this somewhere, so I also prepared a dockerImage output that puts our app
+in a docker image and serves it with lighttpd
+"bat --line-range 1 --line-range 9:14 --line-range 21:22 --line-range 34: flake.nix"
+Note that I don't specify any dependencies explicitly here. Just the fact that I'm referring to
+the `lighttpd.confg` file, the `lighttpd` package and the `app` package is enough for them to be included.
+If the app package wasn't built yet, it will be built recursively, until all dependencies are present.
+"nix build .#dockerImage"
+One dependency that isn't required for this build is docker itself, the layers are built by Nix itself.
+The output is linked at result again, but now it's a OCI container archive we can load and serve with docker
+"docker load < result"
+"docker run --rm -p 8080:8080 sample-app"
+Also note that I included lighttpd from x86_linux, a different architecture and OS above.
+I can just do that with Nix, it doesn't care, and it means that my container image runs everywhere.
+The implications of this are huge. CI pipelines can share artifacts deeply, meaning you only have to run
+a build once.
+TODO: maybe continue? Not sure, it feels like the mechanics are underexplained right now.
+
+---
+
+## 6. The Nix Store
+
+Now, let's see how all of this actually works under the hood. First off, where are the packages
+that we install?
+
+```
+nix shell nixpkgs#pandoc -c which pandoc
+/nix/store/0jbgab6v1781q23av27y6bm5vi4ins3p-pandoc-2.19.2/bin/pandoc
+```
+
+They are in the Nix Store, which is completely separate from your regular files. The Store is
+read-only, only the Nix Daemon (the program running builds) is allowed to edit it.
+
+The big hash is computed from the inputs of a package. Inside the store path, we find basically
+the folder structure we expect from a root filesystem on Linux, but it contains *only* the files
+of that single package.
+When we install a package via shell or profile, these paths are just added to `PATH`, making the
+binaries available.
+Shared libraries are also in their own directories in the store, and are linked from that path
+when a package depending on them is built. Because builds are sandboxed, linking to a library
+that you didn't specify in the dependencies will result in a linker error and the build fails.
+
+But that begs the question.
+
+How *are* packages built with Nix?
+
+The simplest package I can think of is this:
+
+```nix
+derivation {
+  name = "simple";
+  builder = "/bin/bash";
+  args = [ "-c" "echo hello > $out" ];
+  system = "aarch64-darwin";
+}
+```
+
+This is just a function call to the special builtin function `derivation` with a few attributes.
+A name, a builder, the arguments that will be passed to the build, and the system the derivation
+is for. Calling this function will return another attribute set
+
+```nix
+{
+    all = [ «repeated» ];
+    args = [ "-c" "echo hello > $out" ];
+    builder = "/bin/bash";
+    drvAttrs = { args = «repeated»; builder = "/bin/bash"; name = "simple"; system = "aarch64-darwin"; };
+    drvPath = "/nix/store/pmys0a36wrvpyy867310bif0rw6hvqka-simple.drv";
+    name = "simple";
+    out = «repeated»;
+    outPath = "/nix/store/yfr9vir0q1mq2x7i23c0c6nqs0mfx03k-simple";
+    outputName = "out";
+    system = "aarch64-darwin";
+    type = "derivation";
+}
+```
+
+But this is where the magic happens. You can see a `drvPath` and and `outPath`. The `drvPath`
+exists after the function call. Creating these `.drv` files in the nix store is the *only*
+side-effect of the Nix language.
+They look like this:
+
+```
+Derive(
+    [("out","/nix/store/yfr9vir0q1mq2x7i23c0c6nqs0mfx03k-simple","","")],
+    [],
+    [],
+    "aarch64-darwin",
+    "/bin/bash",
+    ["-c","echo hello > $out"],
+    [
+        ("builder","/bin/bash"),
+        ("name","simple"),
+        ("out","/nix/store/yfr9vir0q1mq2x7i23c0c6nqs0mfx03k-simple"),
+        ("system","aarch64-darwin")
+    ]
+)
+```
+
+And they represent all the build instructions required for a package to be built. The format is
+called ATerm, basically JSON. The derivation here is so simple as to be useless as an example,
+so let's take a look at a bigger one, and look at it in JSON format.
+
+```command
+nix derivation show nixpkgs#hello
+```
+
+```
+{
+  "args": [
+    "-e",
+    "/nix/store/6xg259477c90a229xwmb53pdfkn6ig3g-default-builder.sh"
+  ],
+  "builder": "/nix/store/x51af6as8ahz7a3wncpc1a0yz0js3iik-bash-5.2-p15/bin/bash",
+  "env": {
+    ⋮
+    "name": "hello-2.12.1",
+    "nativeBuildInputs": "",
+    "out": "/nix/store/2qamb2h2hnfac07a13ab5pjwf7zh6mmr-hello-2.12.1",
+    "outputs": "out",
+    "patches": "",
+    "pname": "hello",
+    "propagatedBuildInputs": "",
+    "propagatedNativeBuildInputs": "",
+    "src": "/nix/store/pa10z4ngm0g83kx9mssrqzz30s84vq7k-hello-2.12.1.tar.gz",
+    "stdenv": "/nix/store/rjbx6izmqnczdb457glllns8asdal4kn-stdenv-darwin",
+    "strictDeps": "",
+    "system": "aarch64-darwin",
+    "version": "2.12.1"
+  },
+  "inputDrvs": {
+    "/nix/store/6l46vdy2yr13j9ih339a32clwd0i4c9x-stdenv-darwin.drv": [
+      "out"
+    ],
+    "/nix/store/v5slf3f4p6ml3bc4290w6fbmnh006ni0-hello-2.12.1.tar.gz.drv": [
+      "out"
+    ],
+    "/nix/store/x1y8iq5cvipa5jxgzsklgwy2xm556j29-bash-5.2-p15.drv": [
+      "out"
+    ]
+  },
+  "inputSrcs": [
+    "/nix/store/6xg259477c90a229xwmb53pdfkn6ig3g-default-builder.sh"
+  ],
+  "name": "hello-2.12.1",
+  "outputs": {
+    "out": {
+      "path": "/nix/store/2qamb2h2hnfac07a13ab5pjwf7zh6mmr-hello-2.12.1"
+    }
+  },
+  "system": "aarch64-darwin"
+}
+```
+
+The `inputDrvs` attribute is particularly interesting. This tells us what the
+direct depedencies of this derivation are. The set of all depedencies is a lot bigger.

@@ -161,7 +161,7 @@ function nix-profile-flake-demo {
     # But wait, we usually don't work in just one repository, and most probably require
     # different versions of node, python, go, java, etc. so we can't just install them into
     # the user's profile, they would clash with eachother.
-    # So, let's go one step further: to nix develop, 
+    # So, let's go one step further: to nix develop
     nix profile remove '.*'
 
     next-step
