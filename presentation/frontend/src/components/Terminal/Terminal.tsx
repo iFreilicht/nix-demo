@@ -2,21 +2,21 @@ import React, { useState } from "react";
 
 import { Terminal as XTerm } from "xterm";
 import { AttachAddon } from "@xterm/addon-attach";
+import { HOST, PORT } from "../../../../shared/src/constants";
 
-const HOST = "localhost:3000";
 const initTerminal = async (): Promise<XTerm> => {
   const term = new XTerm({ cols: 80, rows: 24, fontSize: 24 });
 
   term.onLineFeed(() => console.log("line feed!"));
 
   const res = await fetch(
-    `http://${HOST}/terminals?cols=` + term.cols + "&rows=" + term.rows,
+    `http://${HOST}:${PORT}/terminals?cols=` + term.cols + "&rows=" + term.rows,
     { method: "POST" }
   );
   const pid = await res.text();
   console.log(`Opened terminal with pid ${pid}`);
 
-  const socketURL = `ws://${HOST}/terminals/${pid}`;
+  const socketURL = `ws://${HOST}:${PORT}/terminals/${pid}`;
 
   const socket = new WebSocket(socketURL);
   const addons = {

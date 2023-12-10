@@ -1,0 +1,32 @@
+{
+  "name": "presentation-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "nc": "new-component",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@xterm/addon-attach": "0.10.0-beta.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "spectacle": "10.1.7",
+    "xterm": "5.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.15",
+    "@types/react-dom": "18.2.7",
+    "@vitejs/plugin-react": "4.2.1",
+    "new-component": "5.0.2",
+    "vite": "5.0.7"
+  },
+  "//": "Override react peer dependency until https://github.com/timc1/kbar/pull/348 is merged and the updated version of kbar lands in spectacle",
+  "overrides": {
+    "react-virtual": {
+      "react": "^18.0.0"
+    }
+  }
+}

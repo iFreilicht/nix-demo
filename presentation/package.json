@@ -1,39 +1,18 @@
 {
-  "name": "presentation",
+  "name": "presentation-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "nc": "new-component",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@xterm/addon-attach": "0.10.0-beta.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "spectacle": "10.1.7",
-    "xterm": "5.3.0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "devDependencies": {
-    "@types/react": "18.2.15",
-    "@types/react-dom": "18.2.7",
     "@typescript-eslint/eslint-plugin": "6.0.0",
     "@typescript-eslint/parser": "6.0.0",
-    "@vitejs/plugin-react": "4.2.1",
     "eslint": "8.45.0",
     "eslint-plugin-react-hooks": "4.6.0",
     "eslint-plugin-react-refresh": "0.4.3",
     "new-component": "5.0.2",
-    "typescript": "5.0.2",
-    "vite": "5.0.7"
-  },
-  "//": "Override react peer dependency until https://github.com/timc1/kbar/pull/348 is merged and the updated version of kbar lands in spectacle",
-  "overrides": {
-    "react-virtual": {
-      "react": "^18.0.0"
-    }
+    "typescript": "5.0.2"
   }
 }
