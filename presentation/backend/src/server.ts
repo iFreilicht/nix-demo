@@ -29,16 +29,29 @@ export function startServer() {
     }
     const cols = parseInt(req.query.cols);
     const rows = parseInt(req.query.rows);
-    const term = pty.spawn("bash", [], {
-      name: "xterm-256color",
-      cols: cols ?? 80,
-      rows: rows ?? 24,
-      cwd: process.env.PWD,
-      env,
-      encoding: "utf8",
-    });
+
+    const term = pty.spawn(
+      "bash",
+      [
+        "-c",
+        // Launch a reproducible and isolated shell environment in which
+        // all tools required for the demo are available
+        "/nix/var/nix/profiles/default/bin/nix develop " +
+          "--ignore-environment --keep TERM --keep COLORTERM " +
+          "../../demo#nix-demo-env",
+      ],
+      {
+        name: "xterm-256color",
+        cols: cols ?? 80,
+        rows: rows ?? 24,
+        cwd: process.env.PWD,
+        env,
+        encoding: "utf8",
+      }
+    );
 
     console.log("Created terminal with PID: " + term.pid);
+
     terminals[term.pid] = term;
     unsentOutput[term.pid] = "";
     temporaryDisposable[term.pid] = term.onData(function (data) {
