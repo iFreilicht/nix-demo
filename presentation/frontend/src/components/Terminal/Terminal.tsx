@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 import { Terminal as XTerm } from "xterm";
+import "xterm/css/xterm.css";
 import { AttachAddon } from "@xterm/addon-attach";
 import { HOST, PORT } from "../../../../shared/src/constants";
 
