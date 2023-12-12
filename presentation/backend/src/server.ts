@@ -17,6 +17,8 @@ export function startServer() {
   const unsentOutput: Record<number, string> = {};
   const temporaryDisposable: Record<number, pty.IDisposable> = {};
 
+  app.use(express.json());
+
   app.post("/terminals", (req, res) => {
     const env: Record<string, string> = {};
     env["COLORTERM"] = "truecolor";
@@ -75,9 +77,14 @@ export function startServer() {
     const term = terminals[pid];
 
     term.resize(cols, rows);
-    console.log(
-      "Resized terminal " + pid + " to " + cols + " cols and " + rows + " rows."
-    );
+    console.log(`Resized terminal ${pid} to ${cols} cols and ${rows} rows.`);
+    res.end();
+  });
+
+  app.post("/terminals/:pid/exec", (req, res) => {
+    const term = terminals[parseInt(req.params.pid)];
+    const command = `${req.body.command}\n`;
+    term.write(command);
     res.end();
   });
 
