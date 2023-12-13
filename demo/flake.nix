@@ -28,6 +28,7 @@
             figlet
             lolcat
             tree
+            python39 # Older version of python to have a "system default"
           ];
 
           shellHook = ''

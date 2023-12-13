@@ -5,13 +5,20 @@ import "xterm/css/xterm.css";
 import { AttachAddon } from "@xterm/addon-attach";
 import { HOST, PORT } from "../../../../shared/src/constants";
 
-const initTerminal = async (): Promise<XTerm> => {
-  const term = new XTerm({ cols: 80, rows: 24, fontSize: 24 });
+const BASE_PATH = `http://${HOST}:${PORT}`;
 
-  term.onLineFeed(() => console.log("line feed!"));
+type EnhancedXTerm = {
+  xterm: XTerm;
+  // Actually sends the command to the server to be executed. XTerm.write only writes on the client side
+  exec: (command: string) => Promise<void>;
+};
+const initTerminal = async (): Promise<EnhancedXTerm> => {
+  const xterm = new XTerm({ cols: 80, rows: 24, fontSize: 24 });
+
+  xterm.onLineFeed(() => console.log("line feed!"));
 
   const res = await fetch(
-    `http://${HOST}:${PORT}/terminals?cols=` + term.cols + "&rows=" + term.rows,
+    `${BASE_PATH}/terminals?cols=${xterm.cols}&rows=${xterm.rows}`,
     { method: "POST" }
   );
   const pid = await res.text();
@@ -23,15 +30,27 @@ const initTerminal = async (): Promise<XTerm> => {
   const addons = {
     attach: new AttachAddon(socket, { bidirectional: true }),
   };
-  term.loadAddon(addons.attach);
+  xterm.loadAddon(addons.attach);
 
-  return term;
+  const exec = async (command: string) => {
+    const body = JSON.stringify({ command });
+    console.log({ body });
+    await fetch(`${BASE_PATH}/terminals/${pid}/exec`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body,
+    });
+  };
+
+  return { xterm, exec };
 };
 
 export function useXTerm(
   parentRef: React.RefObject<HTMLDivElement>
-): React.RefObject<XTerm | null> {
-  const termRef = React.useRef<XTerm | null>(null);
+): React.RefObject<EnhancedXTerm | null> {
+  const termRef = React.useRef<EnhancedXTerm | null>(null);
   const [termStatus, setTermStatus] = useState("none");
 
   React.useEffect(() => {
@@ -45,7 +64,7 @@ export function useXTerm(
 
     initTerminal().then((term) => {
       if (abort) {
-        term.dispose();
+        term.xterm.dispose();
         return;
       }
 
@@ -63,7 +82,7 @@ export function useXTerm(
       return;
 
     setTermStatus("active");
-    termRef.current.open(parentRef.current);
+    termRef.current.xterm.open(parentRef.current);
   }, [termStatus, termRef, parentRef]);
 
   return termRef;

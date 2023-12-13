@@ -1,7 +1,6 @@
 import Terminal from "./components/Terminal";
 import { defaultTheme } from "./theme/default-theme";
 import {
-  CodePane,
   Deck,
   DefaultTemplate,
   Markdown,
@@ -40,23 +39,26 @@ function App() {
             `}
         </MarkdownSlideSet>
         <Slide>
-          <Terminal />
-        </Slide>
-        <Slide>
           <Markdown>
             {`
             ## 1. \`nix shell\`
-          `}
+            `}
           </Markdown>
+        </Slide>
+        <Slide>
+          <Terminal
+            commands={[
+              "python3 --version",
+              "nix shell nixpkgs#python312",
+              "python3 --version",
+              "exit",
+              "python3 --version",
+              "nix run nixpkgs#python38 -- hello.py",
+            ]}
+          />
           <Notes>
             <p>Let's say you have some version of python installed</p>
           </Notes>
-          <CodePane language="command">
-            {`
-            # System version of python
-            python3 --version
-            `}
-          </CodePane>
           <Notes>
             <p>
               But you would like to quickly test a feature of a newer version
@@ -68,13 +70,6 @@ function App() {
             </p>
             <p> With nix, you can just try it out:</p>
           </Notes>
-          <CodePane language="command">
-            {`
-            # Quickly run a different version
-            nix shell nixpkgs#python312
-            python3 --version
-            `}
-          </CodePane>
           <Notes>
             <p className="notes">
               The name of the command might give it away; we didn't actually
@@ -83,12 +78,6 @@ function App() {
               environment. If we close this shell:
             </p>
           </Notes>
-          <CodePane language="command">
-            {`
-            exit
-            python3 --version
-            `}
-          </CodePane>
           <Notes>
             <p>It's gone again!</p>
           </Notes>
@@ -100,9 +89,6 @@ function App() {
               it with "nix run"
             </p>
           </Notes>
-          <CodePane language="command">
-            nix run nixpkgs#python38 -- hello.py
-          </CodePane>
           <Notes>
             <p>
               These are already useful tools to have in your belt. If you lose

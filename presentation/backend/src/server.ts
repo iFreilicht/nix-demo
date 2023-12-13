@@ -22,6 +22,9 @@ export function startServer() {
   app.post("/terminals", (req, res) => {
     const env: Record<string, string> = {};
     env["COLORTERM"] = "truecolor";
+
+    const cwd = process.env.PWD?.replace("presentation/backend", "demo");
+
     if (
       typeof req.query.cols !== "string" ||
       typeof req.query.rows !== "string"
@@ -40,13 +43,13 @@ export function startServer() {
         // all tools required for the demo are available
         "/nix/var/nix/profiles/default/bin/nix develop " +
           "--ignore-environment --keep TERM --keep COLORTERM " +
-          "../../demo#nix-demo-env",
+          ".#nix-demo-env",
       ],
       {
         name: "xterm-256color",
         cols: cols ?? 80,
         rows: rows ?? 24,
-        cwd: process.env.PWD,
+        cwd,
         env,
         encoding: "utf8",
       }
