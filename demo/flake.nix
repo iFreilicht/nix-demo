@@ -7,11 +7,6 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-
-        bashrc = pkgs.writeText ".bashrc" ''
-          # Make prompt nice and terse
-          export PS1='\e[92;1mfelix\e[0m:\e[94;1m~/\W\e[0m$ '
-        '';
       in {
         packages.nix-demo-env = pkgs.mkShell {
           name = "nix-demo-env";
@@ -31,17 +26,29 @@
             python39 # Older version of python to have a "system default"
           ];
 
-          shellHook = ''
-            # Use temporary home directory to prevent programs reading config files from there
-            export HOME=$TMPDIR
-
+          shellHook =
+          # Prevent entering if we're not in the directory of this flake
+          ''
+            if [ ! -e "demo-root-marker" ]; then
+                echo "Error: 'demo-root-marker' is not in CWD!"
+                exit 1
+            fi
+          '' +
+          # Use fake home directory. This is useful in multiple ways:
+          # - programs won't read the user's actual config files
+          # - config files that ensure the demo works properly (like the nix registry) are read from a controlled location
+          # - the cache is persistent, which speeds up the execution of some commands
+          # - the prompt shows a short but correct path, no need for faking anything
+          ''
+            export HOME=$PWD/fake-home
+            cd $HOME
+          '' +
             # Source our own bashrc for the first invocation of `nix develop`
-            source ${bashrc}
-
-            # Ensure the bashrc will be sourced again when `nix shell` or `nix develop` are run
-            ln -s ${bashrc} $TMPDIR/.bashrc
-
-            # Hide output from nix develop
+          ''
+            source .bashrc
+          '' +
+          # Hide output from `nix develop`
+          ''
             clear
           '';
         };
