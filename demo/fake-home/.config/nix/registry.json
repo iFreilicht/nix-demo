@@ -10,7 +10,7 @@
         "narHash": "sha256-ud/6XYWbXFAJuTTApWyYlFtlc54NAxChS1T9Ns+qT7M=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2d82894fa1e2d23a22f40275a78bfbb09b92ffde",
+        "rev": "f66d2b11d7753820b0e45ead2ee6ebcc2090c8d7",
         "type": "github"
       }
     }
