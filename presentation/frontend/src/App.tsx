@@ -9,6 +9,8 @@ import {
   Slide,
 } from "spectacle";
 
+const rarr = <kbd>⇨</kbd>;
+
 function App() {
   return (
     <>
@@ -58,8 +60,7 @@ function App() {
           />
           <Notes>
             <p>Let's say you have some version of python installed</p>
-          </Notes>
-          <Notes>
+            {rarr}
             <p>
               But you would like to quickly test a feature of a newer version
             </p>
@@ -69,27 +70,23 @@ function App() {
               will be.
             </p>
             <p> With nix, you can just try it out:</p>
-          </Notes>
-          <Notes>
-            <p className="notes">
+            {rarr}
+            {rarr}
+            <p>
               The name of the command might give it away; we didn't actually
               install anything This version of python is only available in this
               shell, nowhere else. We actually created an **isolated**
               environment. If we close this shell:
             </p>
-          </Notes>
-          <Notes>
+            {rarr}
+            {rarr}
             <p>It's gone again!</p>
-          </Notes>
-
-          <Notes>
             <p>
               If you just want to run a command once, for example to test if
               your script also works with an older version of python, you can do
               it with "nix run"
             </p>
-          </Notes>
-          <Notes>
+            {rarr}
             <p>
               These are already useful tools to have in your belt. If you lose
               interest now and forget everything else about this talk, at least
