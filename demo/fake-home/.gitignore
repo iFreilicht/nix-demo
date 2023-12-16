@@ -1,2 +1,7 @@
-.cache
-Library
+*
+!.config/nix
+!mytools
+!sample-app
+!sample-service
+!.bashrc
+!hello.py
