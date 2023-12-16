@@ -1,6 +1,8 @@
 import Terminal from "./components/Terminal";
 import { defaultTheme } from "./theme/default-theme";
 import {
+  Appear,
+  CodePane,
   Deck,
   DefaultTemplate,
   Markdown,
@@ -43,7 +45,9 @@ function App() {
         <Slide>
           <Markdown>
             {`
-            ## 1. \`nix shell\`
+            ## 1. \`nix shell\` and \`nix run\`
+
+            *Ephemeral* package management, *isolated* between *sessions*
             `}
           </Markdown>
         </Slide>
@@ -91,6 +95,113 @@ function App() {
               These are already useful tools to have in your belt. If you lose
               interest now and forget everything else about this talk, at least
               remember "nix shell" and "nix run", they can be a livesaver.
+            </p>
+            <p>
+              But actually, don't lose interest yet. I'll show you some useful
+              tricks and important concepts that will be very valuable when
+              using these tools, but also for understanding Nix as a whole.
+            </p>
+          </Notes>
+        </Slide>
+        <Slide>
+          <Appear>
+            <CodePane language={"bash"}>
+              {`
+              nix shell nixpkgs#python312
+            `}
+            </CodePane>
+          </Appear>
+          <Appear>
+            <CodePane language={"bash"}>
+              {`
+              nix run https://github.com/NixOS/nixpkgs/archive/refs/heads/master.zip#python38
+              nix run github:NixOS/nixpkgs#python38
+              nix run nixpkgs#python38
+            `}
+            </CodePane>
+          </Appear>
+          <Appear>
+            <Terminal
+              commands={[
+                "nix run github:eza-community/eza -- -l",
+                "cargo --version",
+              ]}
+            />
+          </Appear>
+          <Notes>
+            <p>
+              First off, I'm sure you've noticed the odd "nixpkgs#package"
+              syntax, right?
+            </p>
+            {rarr}
+            <p>
+              No other package manager requires you to type out the name of the
+              package repository your accessing, so why would Nix? Well, this is
+              actually a URL, `nixpkgs` is just a shortcut to the official
+              package repository.
+            </p>
+            {rarr}
+            <p>
+              You can use any URL to a tarball or zip archive (as long as they
+              contain the files nix expects), no matter if it's via https, ssh
+              or a local disk, and just install directly from that. For common
+              cases we have special protocol names like `github:`, and for
+              integral parts of the Nix ecosystem, aliases are used.
+            </p>
+            <p>
+              So, if you created a piece of software and want people to use it,
+              you don't need to get it packaged in a distro, you don't need to
+              document build instructions, tell people to install your language
+              specific package manager and some required libraries first, create
+              releases or anything like that. Any user can run your software
+              with a single command:
+            </p>
+            {rarr}
+            <p>
+              All dependencies are installed in the exact versions you specify
+              alongside it. Eza is written in Rust, but I don't even have it
+              installed.
+            </p>
+            {rarr}
+            <p>
+              We'll look later at what files you need to create for this to
+              work, but I think you can see how powerful this is.
+            </p>
+          </Notes>
+        </Slide>
+        <Slide>
+          <Terminal
+            commands={[
+              "nix shell nixpkgs#jq nixpkgs#nodejs nixpkgs#pipenv",
+              "jq --version && node --version && pipenv --version",
+              "exit",
+              "nix shell nixpkgs#{jq,nodejs,pipenv}",
+              "jq --version && node --version && pipenv --version",
+            ]}
+          ></Terminal>
+          <Notes>
+            <p>
+              There's another detail you should learn before we move on. You can
+              enter a shell with multiple packages at once:
+            </p>
+            {rarr}
+            {rarr}
+            {rarr}
+            <p>
+              But typing `nixpkgs` every time is annoying. You can instead type:
+            </p>
+            {rarr}
+            {rarr}
+            <p>
+              This is not a Nix feature, but a feature from bash (or zsh) called
+              brace-expansion. Remember this syntax, you'll see it a few more
+              times in this talk.
+            </p>
+            <p>
+              Alright, so we can run any program without installing it, enter
+              temporary environments containing any libraries or programs we
+              want, but this seems somewhat limiting, right? How can we install
+              packages permanently?
             </p>
           </Notes>
         </Slide>

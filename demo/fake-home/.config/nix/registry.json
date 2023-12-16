@@ -13,6 +13,21 @@
         "rev": "f66d2b11d7753820b0e45ead2ee6ebcc2090c8d7",
         "type": "github"
       }
+    },
+    {
+      "from": {
+        "owner": "eza-community",
+        "repo": "eza",
+        "type": "github"
+      },
+      "to": {
+        "lastModified": 1702486142,
+        "narHash": "sha256-BYzt8PLqMbxlp8CdBJuBXGbTsC9e/dWhB4j1Ak2Fjbo=",
+        "owner": "eza-community",
+        "repo": "eza",
+        "rev": "edcf392c78abd8abea76d4f59fb639ad134a0d8b",
+        "type": "github"
+      }
     }
   ],
   "version": 2
