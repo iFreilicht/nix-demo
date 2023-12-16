@@ -5,11 +5,12 @@ import { useSteps } from "spectacle";
 
 type TerminalProps = {
   commands: string[];
+  rows?: number;
 };
 
-function Terminal({ commands }: TerminalProps) {
+function Terminal({ commands, rows }: TerminalProps) {
   const termParentRef = React.useRef<HTMLDivElement>(null);
-  const termRef = useXTerm(termParentRef);
+  const termRef = useXTerm(termParentRef, rows);
 
   const [highestStep, setHighestStep] = React.useState(-1);
 

@@ -12,8 +12,8 @@ type EnhancedXTerm = {
   // Actually sends the command to the server to be executed. XTerm.write only writes on the client side
   exec: (command: string) => Promise<void>;
 };
-const initTerminal = async (): Promise<EnhancedXTerm> => {
-  const xterm = new XTerm({ cols: 80, rows: 24, fontSize: 24 });
+const initTerminal = async (rows: number): Promise<EnhancedXTerm> => {
+  const xterm = new XTerm({ cols: 80, rows, fontSize: 24 });
 
   xterm.onLineFeed(() => console.log("line feed!"));
 
@@ -48,7 +48,8 @@ const initTerminal = async (): Promise<EnhancedXTerm> => {
 };
 
 export function useXTerm(
-  parentRef: React.RefObject<HTMLDivElement>
+  parentRef: React.RefObject<HTMLDivElement>,
+  rows: number = 27 /* This default works for an empty slide with nothing but the terminal on it */
 ): React.RefObject<EnhancedXTerm | null> {
   const termRef = React.useRef<EnhancedXTerm | null>(null);
   const [termStatus, setTermStatus] = useState("none");
@@ -62,7 +63,7 @@ export function useXTerm(
       return;
     let abort = false;
 
-    initTerminal().then((term) => {
+    initTerminal(rows).then((term) => {
       if (abort) {
         term.xterm.dispose();
         return;
@@ -75,7 +76,7 @@ export function useXTerm(
     return () => {
       abort = true;
     };
-  }, [termStatus, parentRef]);
+  }, [termStatus, parentRef, rows]);
 
   React.useEffect(() => {
     if (termStatus !== "ready" || !termRef.current || !parentRef.current)

@@ -126,6 +126,7 @@ function App() {
                 "nix run github:eza-community/eza -- -l",
                 "cargo --version",
               ]}
+              rows={13}
             />
           </Appear>
           <Notes>
@@ -202,6 +203,48 @@ function App() {
               temporary environments containing any libraries or programs we
               want, but this seems somewhat limiting, right? How can we install
               packages permanently?
+            </p>
+          </Notes>
+        </Slide>
+        <Slide>
+          <Markdown>
+            {`
+            ## 2. \`nix profile\`
+
+            *Persistent* package management, *isolated* between *users*
+            `}
+          </Markdown>
+          <Appear>
+            <Terminal
+              commands={[
+                "nix profile install nixpkgs#jq",
+                "jq --version",
+                "nix profile install nixpkgs#{fd,asdf-vm,ripgrep,moreutils}",
+                "fd --version && asdf --version && rg --version && sponge -h",
+              ]}
+              rows={16}
+            ></Terminal>
+          </Appear>
+          <Notes>
+            <p>
+              Installing something works almost the same as in any other package
+              manager.
+            </p>
+            {rarr}
+            {rarr}
+            <p>
+              And we can quickly install multiple packages as well with the
+              trick I've shown you before
+            </p>
+            {rarr}
+            <p>
+              And they will all be available, not just in this shell, but every
+              shell we launch in the future, too
+            </p>
+            {rarr}
+            <p>
+              But are you noticing something about these commands compared to
+              most other package managers? Yup, we didn't have to use sudo!
             </p>
           </Notes>
         </Slide>
