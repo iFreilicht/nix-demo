@@ -26,20 +26,10 @@ function Terminal({ commands }: TerminalProps) {
     setHighestStep(highestStep + 1);
   }, [commands, highestStep, step, termRef]);
 
-  const handleClear = () => {
-    if (termRef.current === null) {
-      return;
-    }
-    const term = termRef.current;
-
-    term.xterm.clear();
-  };
-
   return (
     <div>
       {stepMarker}
       <div ref={termParentRef}></div>
-      <button onClick={handleClear}>Clear</button>
     </div>
   );
 }
