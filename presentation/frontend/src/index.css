@@ -27,6 +27,7 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
+  overflow: hidden; /* Ensure xterm measuring elements don't break presenter view */
   min-width: 320px;
   min-height: 100vh;
 }
